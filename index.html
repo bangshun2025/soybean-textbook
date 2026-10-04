@@ -115,7 +115,38 @@ h1.rt{font-size:27px;line-height:1.4;font-weight:700;margin:2px 0 6px}
 .kc-title{font-size:1.28em;font-weight:700;line-height:1.45;margin:12px 0 4px}
 .kcard[data-lv=h2] .kc-title{font-size:1.5em;text-align:center;margin-top:26px}
 .kc-body{flex:1;margin-top:10px}
-.kc-body ul,.kc-body ol{padding-left:1.4em}
+/* 开篇导览卡 */
+.kc-hero{background:linear-gradient(150deg,#43584A,#2F4237);border-radius:18px;color:#fff;padding:24px 20px 20px;position:relative;overflow:hidden;margin:12px 0 16px}
+.kc-hero::after{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:rgba(185,138,47,.25)}
+.kh-k{font-size:12px;letter-spacing:.3em;opacity:.75}
+.kh-t{font-size:1.3em;font-weight:700;line-height:1.45;margin:8px 0 6px;position:relative}
+.kh-s{font-size:.85em;opacity:.85;line-height:1.7;position:relative}
+.kh-chips{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;position:relative}
+.kh-chips span{font-size:12.5px;padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22)}
+.kh-hint{margin-top:14px;font-size:13px;color:#E8D9B0;letter-spacing:.05em;position:relative}
+/* 章节卡 */
+.kc-in.chap{background:linear-gradient(150deg,#43584A,#2F4237);color:#fff;align-items:center;justify-content:center;text-align:center;min-height:44vh}
+.ch-k{font-size:12px;letter-spacing:.5em;color:#E8D9B0;border-top:1px solid rgba(185,138,47,.6);border-bottom:1px solid rgba(185,138,47,.6);padding:8px 4px 8px 10px;margin-bottom:18px}
+.ch-t{font-size:1.4em;font-weight:700;line-height:1.55;max-width:20em}
+.ch-b{font-size:.88em;opacity:1;text-align:left;margin-top:16px;width:100%}
+.ch-b .tbl-wrap,.blk.chap .tbl-wrap{background:#fff;border-color:#fff;border-radius:16px;padding:6px;box-shadow:0 4px 14px rgba(0,0,0,.18);color:#333}
+.ch-b td:nth-child(-n+2),.blk.chap td:nth-child(-n+2){white-space:nowrap}
+.ch-b td:nth-child(3),.blk.chap td:nth-child(3){white-space:nowrap}
+.ch-b a,.blk.chap a{color:var(--green)}
+/* 全文页分块卡 */
+.blk{background:var(--card);border-radius:20px;box-shadow:0 1px 8px rgba(67,88,74,.06);padding:18px 20px 14px;margin:0 0 14px;scroll-margin-top:86px}
+.blk .btag{display:inline-block;font-size:12px;font-weight:600;color:var(--green);background:var(--green-soft);border-radius:999px;padding:2px 10px;margin-bottom:8px}
+.blk .btag.gold{color:var(--gold);background:var(--gold-soft)}
+.blk .bt{font-size:1.15em;font-weight:700;line-height:1.5;margin-bottom:8px}
+.blk.chap{background:linear-gradient(150deg,#43584A,#2F4237);color:#fff;text-align:center;padding:26px 20px 22px}
+.blk.chap .btag{display:block;width:max-content;margin:0 auto 12px;color:#E8D9B0;background:transparent;border-top:1px solid rgba(185,138,47,.6);border-bottom:1px solid rgba(185,138,47,.6);border-radius:0;padding:6px 4px 6px 10px;letter-spacing:.5em}
+.blk.chap .bt{font-size:1.3em;margin:0}
+.blk.intro{padding:0;overflow:hidden}
+.blk.intro .kc-hero{border-radius:19px 19px 0 0;margin:0}
+.blk.intro .bb{padding:16px 20px 6px}
+/* 站内交叉引用 */
+a.xref{background:var(--green-soft);border-radius:6px;padding:1px 6px}
+a.xref::after{content:" ↗";font-size:.8em}
 .kc-state{border-top:1px dashed var(--line);margin-top:18px;padding-top:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .kc-open{font-size:13px;color:var(--ink3);display:flex;align-items:center;gap:5px;white-space:nowrap}
 .kc-open.yes{color:var(--green);font-weight:600}
@@ -156,7 +187,7 @@ $('#fsize').onclick = () => { fs = (fs+1)%3; applyFS(); window.scrollTo(window.s
 
 function renderOV(){
   $('#btitle').textContent = '大豆教材 · 13 篇';
-  const totalCards = DATA.reduce((a,d)=>a+d.cards,0);
+  const totalCards = DATA.reduce((a,_,i)=>a+cardCount(i),0);
   let h = `
   <div class="hero">
     <div class="k">SOYBEAN · 大豆教材</div>
@@ -181,21 +212,27 @@ function renderOV(){
 
 function renderRD(i){
   const d = DATA[i];
+  const cs = cardsOf(i);
   $('#btitle').textContent = d.head;
-  // 目录
-  const tmp = document.createElement('div');
-  tmp.innerHTML = d.html;
-  const hs = tmp.querySelectorAll('h2,h3');
+  // 目录（与卡片同源：已去修订记录）
   let toc = '';
-  hs.forEach((el,k)=>{
-    const lv = el.tagName==='H3'?'lv3':'';
-    const txt = el.textContent.trim();
-    if(txt) toc += `<li><a class="${lv}" href="#sec-${k+1}" onclick="jump(event)">${txt}</a></li>`;
+  cs.forEach((c,k)=>{
+    if(c.lv==='h2') toc += `<li><a href="#sec-${k}" onclick="jump(event)">${esc(c.title)}</a></li>`;
+    else if(c.lv==='h3') toc += `<li><a class="lv3" href="#sec-${k}" onclick="jump(event)">${esc(c.title)}</a></li>`;
   });
   let h = `<div class="crumb">${d.tag}</div><h1 class="rt">${d.head}</h1>
-    <div class="rmeta">${d.sub||''}&nbsp;&nbsp;·&nbsp;&nbsp;约 ${d.mins} 分钟${hs.length?`&nbsp;&nbsp;·&nbsp;&nbsp;<a href="#toc" onclick="openTOC(event)">查看本篇目录</a>`:''}</div>`;
-  if(toc) h += `<div id="toc" class="open"><div class="t" onclick="this.parentNode.classList.toggle('open')"><span>📋 本篇目录（${hs.length} 节）</span><span class="chev">›</span></div><ol>${toc}</ol></div>`;
-  h += `<div class="art">${d.html}</div>`;
+    <div class="rmeta">${d.sub||''}&nbsp;&nbsp;·&nbsp;&nbsp;约 ${d.mins} 分钟${toc?`&nbsp;&nbsp;·&nbsp;&nbsp;<a href="#toc" onclick="openTOC(event)">查看本篇目录</a>`:''}</div>`;
+  if(toc) h += `<div id="toc" class="open"><div class="t" onclick="this.parentNode.classList.toggle('open')"><span>📋 本篇目录（${cs.filter(c=>c.lv!=='intro').length} 节）</span><span class="chev">›</span></div><ol>${toc}</ol></div>`;
+  // 分块卡片正文
+  cs.forEach((c,k)=>{
+    if(c.lv==='h2'){
+      h += `<div class="blk chap" id="sec-${k}"><div class="btag">章 节</div><h2 class="bt">${esc(c.title)}</h2>${c.body?`<div class="bb art">${c.body}</div>`:''}</div>`;
+    } else if(c.lv==='intro'){
+      h += `<div class="blk intro" id="sec-${k}">${introHead(d,cs)}${c.body?`<div class="bb art">${c.body}</div>`:''}</div>`;
+    } else {
+      h += `<div class="blk" id="sec-${k}"><div class="btag">知识点</div><h3 class="bt">${esc(c.title)}</h3><div class="bb art">${c.body||''}</div></div>`;
+    }
+  });
   h += `<div class="pn">`;
   h += i>0 ? `<a href="#/p/${i-1}" onclick="nav(event,${i-1})"><span class="dir">← 上一篇</span><span class="pt">${DATA[i-1].head}</span></a>`
            : `<a class="ghost" href="#/" onclick="navHome(event)"><span class="pt">这是第一篇 · 回总览</span></a>`;
@@ -203,8 +240,6 @@ function renderRD(i){
            : `<a class="ghost nx" href="#/" onclick="navHome(event)"><span class="pt">已读完 · 回总览 ✓</span></a>`;
   h += `</div><div class="foot">大豆教材 · ${i+1} / ${DATA.length}<br><a href="#/c/${i}" onclick="event.preventDefault();goCards(${i})">📇 翻卡学习这篇（知识点卡片模式）</a></div>`;
   rd.innerHTML = h;
-  // 目录锚点 id 注入到真实 DOM
-  rd.querySelectorAll('.art h2,.art h3').forEach((el,k)=> el.id = 'sec-'+(k+1));
 }
 /* ===== 学习状态（打开=自动 / 已读=手动勾选） ===== */
 const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -220,32 +255,55 @@ function toggleRead(d,k,el){
   const meta = $('#cvMeta');
   if(meta && !cv.classList.contains('hide')) meta.textContent = `第 ${cvK+1} / ${cvN} 张 · 本篇已读 ${readCount(cvD)} 张`;
 }
-const readTotal = ()=>Object.keys(readMap).length;
-function cardCount(di){ return cardsOf(di).length; }
-function readCount(di){ let n=0; for(const k in readMap) if(k.startsWith(di+'-')) n++; return n; }
+const readTotal = ()=>{ let n=0; for(const k in readMap){ const p=k.split('-'); const cs=KCACHE[+p[0]]||cardsOf(+p[0]); if(cs[+p[1]]&&cs[+p[1]].lv!=='h2') n++; } return n; };
+function cardCount(di){ return cardsOf(di).filter(c=>c.lv!=='h2').length; }
+function readCount(di){ const cs=cardsOf(di); let n=0; for(const k in readMap){ const p=k.split('-'); if(+p[0]===di && cs[+p[1]] && cs[+p[1]].lv!=='h2') n++; } return n; }
 
-/* ===== 知识点切片：每个 h2/h3 一张卡，其余内容归当前卡 ===== */
+/* ===== 知识点切片：Notion 链接转站内 · 去修订记录 · 每个 h2/h3 一张卡 ===== */
+const ID2IDX = {}; DATA.forEach((d,i)=>ID2IDX[d.id.replace(/-/g,'')]=i);
+function shortHead(i){ const h=DATA[i].head; const m=h.match(/第[一二三四五六七八九十]+讲/); return m?m[0]:h.slice(0,12); }
+function prepareHtml(di){
+  return DATA[di].html.replace(/<a[^>]*href="https:\/\/app\.notion\.com\/p\/([0-9a-f]{32})"[^>]*>([\s\S]*?)<\/a>/g, (m, pid, inner)=>{
+    const i = ID2IDX[pid]; if(i===undefined) return m;
+    const txt = inner.replace(/<[^>]+>/g,'').trim();
+    const keep = (txt && txt!=='Untitled') ? inner : ('📘 '+shortHead(i));
+    return `<a class="xref" href="#/p/${i}">${keep}</a>`;
+  });
+}
 const KCACHE = {};
 function cardsOf(di){
   if(KCACHE[di]) return KCACHE[di];
-  const tmp = document.createElement('div'); tmp.innerHTML = DATA[di].html;
+  const tmp = document.createElement('div'); tmp.innerHTML = prepareHtml(di);
   const out = []; let cur = null;
+  const push = ()=>{ if(cur && cur.title!=='修订记录') out.push(cur); cur = null; };
   [...tmp.children].forEach(el=>{
     if(/^H[23]$/.test(el.tagName)){
-      if(cur) out.push(cur);
+      push();
       cur = {lv: el.tagName==='H2'?'h2':'h3', title: el.textContent.trim()||'（未命名小节）', body: ''};
     } else {
-      if(!cur) cur = {lv:'h3', title:'开篇', body:''};
+      if(!cur) cur = {lv:'intro', title:'开篇', body:''};
       cur.body += el.outerHTML;
     }
   });
-  if(cur) out.push(cur);
+  push();
   return KCACHE[di] = out;
 }
 
 /* ===== 卡片流 ===== */
 let cvD=0, cvK=0, cvN=0;
 function goCards(i){ location.hash = '#/c/'+i; }
+function introHead(d, cs){
+  const n = cs.filter(c=>c.lv==='h3').length;
+  return `<div class="kc-hero"><div class="kh-k">${esc(d.tag)} · 学习导览</div><div class="kh-t">${esc(d.head)}</div><div class="kh-s">${esc(d.sub||'')}</div>
+  <div class="kh-chips"><span>🗂 ${n} 张知识点卡</span><span>⏱ 约 ${d.mins} 分钟</span></div>
+  <div class="kh-hint">👈 左右滑动屏幕翻卡学习 👉</div></div>`;
+}
+function stateArea(di,k){
+  return `<div class="kc-state">
+    <span class="kc-open" id="ko-${k}">◌ 未打开</span>
+    <label class="kc-read${readMap[okey(di,k)]?' on':''}"><input type="checkbox" ${readMap[okey(di,k)]?'checked':''} onchange="toggleRead(${di},${k},this)"> 我已阅读</label>
+  </div>`;
+}
 function renderCV(di){
   cvD=di; cvK=0;
   const cs = cardsOf(di); cvN = cs.length;
@@ -254,14 +312,17 @@ function renderCV(di){
     <a class="cv-full" href="#/p/${di}" onclick="nav(event,${di})">整篇阅读</a></div>
   <div class="cv-vp" id="cvVp"><div class="cv-track" id="cvTrack">`;
   cs.forEach((c,k)=>{
-    h += `<div class="kcard" data-lv="${c.lv}"><div class="kc-in">
+    if(c.lv==='h2'){
+      h += `<div class="kcard" data-lv="h2"><div class="kc-in chap"><div class="ch-k">章 节</div><div class="ch-t">${esc(c.title)}</div>${c.body?`<div class="ch-b art">${c.body}</div>`:''}</div></div>`;
+    } else if(c.lv==='intro'){
+      h += `<div class="kcard" data-lv="intro"><div class="kc-in intro">${introHead(DATA[di],cs)}<div class="kc-body art">${c.body||''}</div>${stateArea(di,k)}</div></div>`;
+    } else {
+      h += `<div class="kcard" data-lv="${c.lv}"><div class="kc-in">
       <div class="kc-tag"><span class="kc-lv ${c.lv}">${c.lv==='h2'?'章节':'知识点'}</span><span>${k+1} / ${cvN}</span></div>
       <div class="kc-title">${esc(c.title)}</div>
-      <div class="kc-body">${c.body||''}</div>
-      <div class="kc-state">
-        <span class="kc-open" id="ko-${k}">◌ 未打开</span>
-        <label class="kc-read${readMap[okey(di,k)]?' on':''}"><input type="checkbox" ${readMap[okey(di,k)]?'checked':''} onchange="toggleRead(${di},${k},this)"> 我已阅读</label>
-      </div></div></div>`;
+      <div class="kc-body art">${c.body||''}</div>
+      ${stateArea(di,k)}</div></div>`;
+    }
   });
   h += `</div></div>
   <div class="cv-nav">
